@@ -429,7 +429,7 @@ const COLORS = ['#7F77DD','#D85A30','#1D9E75','#D4537E','#378ADD','#BA7517','#A3
 const DAYS_KO = ['일','월','화','수','목','금','토'];
 const HOUR_H = 52, COL_COUNT = 3;
 
-let S = {tripId:null,tripName:'',days:[],events:[],users:[],currentUser:null,windowStart:0,currentTab:'plan'};
+let S = {tripId:null,tripName:'',days:[],events:[],users:[],deletedIds:[],currentUser:null,windowStart:0,currentTab:'plan'};
 let dragSt=null,resizeSt=null,moveSt=null,pendingDrag=null,editEvId=null,detailEvId=null;
 
 // ── 유틸 ──
@@ -483,10 +483,10 @@ async function dbSave(){
       }catch(e){}
       if(serverData){
         // 서버에만 있는 이벤트/유저 병합
-        const serverEvIds = new Set((serverData.events||[]).map(e=>e.id));
         const myEvIds = new Set(S.events.map(e=>e.id));
-        // 서버에만 있는 이벤트 (다른 사람이 추가한 것) 합치기
-        const serverOnly = (serverData.events||[]).filter(e=>!myEvIds.has(e.id));
+        const deletedIds = new Set(S.deletedIds||[]);
+        // 서버에만 있는 이벤트 중 내가 삭제하지 않은 것만 병합
+        const serverOnly = (serverData.events||[]).filter(e=>!myEvIds.has(e.id)&&!deletedIds.has(e.id));
         S.events = [...S.events, ...serverOnly];
         // 서버에만 있는 유저 합치기
         const myUserIds = new Set(S.users.map(u=>u.id));
@@ -525,7 +525,7 @@ async function dbLoad(tripId){
     if(!r.ok) return false;
     const j = await r.json();
     const d = j.record;
-    Object.assign(S, {tripName:d.tripName,startDate:d.startDate,endDate:d.endDate,days:d.days||[],events:d.events||[],users:d.users||[]});
+    Object.assign(S, {tripName:d.tripName,startDate:d.startDate,endDate:d.endDate,days:d.days||[],events:d.events||[],users:d.users||[],deletedIds:[]});
     return true;
   }catch(e){return false}
 }
@@ -1148,7 +1148,13 @@ function editEvModal(evid){
 
 async function fixEv(evid){const ev=S.events.find(e=>e.id===evid);if(ev)ev.fixed=true;await dbSave();closeDetModal();renderCalendar();toast('확정됐어요!')}
 async function unfixEv(evid){const ev=S.events.find(e=>e.id===evid);if(ev)ev.fixed=false;await dbSave();closeDetModal();renderCalendar();toast('확정 취소했어요')}
-async function delEv(evid){S.events=S.events.filter(e=>e.id!==evid);await dbSave();closeDetModal();renderCalendar();toast('삭제했어요')}
+async function delEv(evid){
+  if(!S.deletedIds)S.deletedIds=[];
+  S.deletedIds.push(evid);
+  S.events=S.events.filter(e=>e.id!==evid);
+  await dbSave();
+  closeDetModal();renderCalendar();toast('삭제했어요');
+}
 
 function switchTab(tab){
   S.currentTab=tab;
