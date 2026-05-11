@@ -76,7 +76,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .resize-h::after{content:'';width:16px;height:2px;background:rgba(0,0,0,0.2);border-radius:1px}
 .drag-ghost{position:fixed;border-radius:5px;pointer-events:none;opacity:0.35;border:2px dashed var(--accent);background:rgba(247,37,133,0.08);display:none;z-index:50}
 .ev-block.moving{opacity:0.35;pointer-events:none;}
-.move-ghost{position:absolute;border-radius:5px;pointer-events:none;opacity:0.8;border:2px solid var(--accent);z-index:10;left:2px;right:2px;display:none;}
+.move-ghost{position:absolute;border-radius:5px;pointer-events:none;opacity:0.75;border:2.5px solid var(--accent);background:rgba(247,37,133,0.1);z-index:10;left:2px;right:2px;display:none;}
 .legend{display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1.5px solid var(--black);background:var(--mint);position:sticky;bottom:52px;z-index:16}
 .litem{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
 .ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -98,7 +98,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .modal-overlay.open{display:flex}
 .modal{background:var(--bg);border-radius:16px 16px 0 0;padding:0;width:100%;max-width:100%;border:2.5px solid var(--black);border-bottom:none;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)}
 .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 0}
-.modal-inner{padding:1rem 1.4rem 1.4rem}
+.modal-inner{padding:1rem 1.4rem 1.4rem;position:relative}
 .modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text);font-family:'Courier New',monospace;letter-spacing:0.04em}
 .mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap}
 
@@ -356,8 +356,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
       <div class="fr"><label>메모</label><input type="text" id="ev-memo" placeholder="예: 예약 필수"/></div>
+      <button onclick="closeEvModal()" style="position:absolute;top:20px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1;padding:4px">×</button>
       <div class="mbtns">
-        <button class="btn btn-sm" onclick="closeEvModal()">취소</button>
         <button class="btn btn-primary btn-sm" onclick="saveEvent()">저장</button>
       </div>
       </div>
@@ -395,7 +395,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="btn btn-sm btn-full" onclick="copyUrl()" style="margin-top:8px;background:var(--yellow);border-color:var(--black);color:var(--black)"><i class="ti ti-copy"></i> 링크 복사</button>
       <div style="font-size:13px;font-weight:700;margin:1rem 0 6px;color:var(--text);font-family:'Courier New',monospace;letter-spacing:0.04em">참여자</div>
       <div class="plist" id="plist"></div>
-      <div class="mbtns"><button class="btn btn-sm" onclick="closeShare()">닫기</button></div>
+      <button onclick="closeShare()" style="position:absolute;top:20px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1;padding:4px">×</button>
       </div>
     </div>
   </div>
@@ -772,32 +772,47 @@ function renderCalendar(){
 
 // ── 블록 이동 헬퍼 ──
 function startMoveGhost(b, clientX, clientY, colRect){
-  let mg=document.getElementById('move-ghost');
-  if(!mg){mg=document.createElement('div');mg.id='move-ghost';mg.className='move-ghost';document.getElementById('day-cols').appendChild(mg);}
+  // 기존 고스트 제거
+  document.querySelectorAll('.move-ghost').forEach(x=>x.remove());
   const ev=S.events.find(x=>x.id===moveSt.evid);if(!ev)return;
+  // 현재 컬럼에 고스트 생성
+  const col=document.elementFromPoint(clientX,clientY)?.closest('.day-col')||b.closest('.day-col');
+  if(!col)return;
+  const mg=document.createElement('div');mg.className='move-ghost';
   mg.style.height=mToY(ev.endMin-ev.startMin)+'px';
-  mg.style.background=b.style.background.replace('1E','88');
   mg.style.borderColor=b.style.borderColor;
   mg.style.display='block';
+  col.appendChild(mg);
+  moveSt._ghostCol=col;
   updateMoveGhost(clientX,clientY,colRect);
 }
 
 function updateMoveGhost(clientX, clientY, colRect){
-  const mg=document.getElementById('move-ghost');if(!mg||!moveSt)return;
-  const ev=S.events.find(x=>x.id===moveSt.evid);if(!ev)return;
-  const col=document.elementFromPoint(clientX,clientY)?.closest('.day-col');
-  const targetRect=col?col.getBoundingClientRect():colRect;
-  const y=clientY-targetRect.top-moveSt.offsetY;
+  const ev=S.events.find(x=>x.id===moveSt?.evid);if(!ev)return;
+  // 현재 포인터 위치의 컬럼 찾기
+  const targetCol=document.elementFromPoint(clientX,clientY)?.closest('.day-col');
+  if(targetCol&&targetCol!==moveSt._ghostCol){
+    // 다른 컬럼으로 이동 시 고스트도 이동
+    document.querySelectorAll('.move-ghost').forEach(x=>x.remove());
+    const mg=document.createElement('div');mg.className='move-ghost';
+    mg.style.height=mToY(ev.endMin-ev.startMin)+'px';
+    const origBlock=document.querySelector('.ev-block.moving');
+    if(origBlock)mg.style.borderColor=origBlock.style.borderColor;
+    mg.style.display='block';
+    targetCol.appendChild(mg);
+    moveSt._ghostCol=targetCol;
+  }
+  const mg=moveSt._ghostCol?.querySelector('.move-ghost');if(!mg)return;
+  const rect=moveSt._ghostCol.getBoundingClientRect();
+  const y=clientY-rect.top-moveSt.offsetY;
   const newStart=Math.max(0,Math.min(23*60,yToM(y)));
   mg.style.top=mToY(newStart)+'px';
-  mg.style.height=mToY(ev.endMin-ev.startMin)+'px';
 }
 
 async function onMoveEnd(clientX, clientY){
   if(!moveSt){return;}
   const ev=S.events.find(x=>x.id===moveSt.evid);
-  const mg=document.getElementById('move-ghost');
-  if(mg)mg.style.display='none';
+  document.querySelectorAll('.move-ghost').forEach(x=>x.remove());
   if(ev){
     const col=document.elementFromPoint(clientX,clientY)?.closest('.day-col');
     const targetRect=col?col.getBoundingClientRect():moveSt.colRect;
@@ -896,7 +911,11 @@ function setupDrag(){
       updateMoveGhost(t.clientX,t.clientY,moveSt.colRect);
       e.preventDefault();return;
     }
-    if(!touchDragging&&dy>10&&dy>dx){
+    // 수평 이동이 수직보다 크거나 수직 이동 30px 미만이면 스크롤 허용
+    if(!touchDragging){
+      if(dx>dy)return; // 수평 스크롤 허용
+      if(dy<30)return; // 30px 미만이면 스크롤 우선
+      // 수직 30px 이상 + 수직>수평 이면 드래그 시작
       touchDragging=true;
       onDragStart(touchStartX,touchStartY,document.elementFromPoint(touchStartX,touchStartY));
     }
@@ -973,7 +992,17 @@ function openDetModal(evid){
   document.getElementById('det-body').innerHTML=body;
   renderVoteUI(ev);
   const btns=document.getElementById('det-btns');
-  btns.innerHTML='<button class="btn btn-sm" onclick="closeDetModal()">닫기</button>';
+  // X 버튼은 modal-inner에 고정
+  let _xBtn=document.querySelector('#detail-modal .modal-x-btn');
+  if(!_xBtn){
+    _xBtn=document.createElement('button');
+    _xBtn.className='modal-x-btn';
+    _xBtn.setAttribute('onclick','closeDetModal()');
+    _xBtn.style.cssText='position:absolute;top:20px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1;padding:4px';
+    _xBtn.textContent='×';
+    document.querySelector('#detail-modal .modal-inner').prepend(_xBtn);
+  }
+  btns.innerHTML='';
   const isOwner=S.currentUser&&ev.userId===S.currentUser.id&&S.currentTab==='plan';
   if(isOwner){
     btns.innerHTML+='<button class="btn btn-sm" onclick="editEvModal(\''+evid+'\')">수정</button>';
