@@ -493,17 +493,27 @@ async function joinTrip(){
 function renderCPicks(){
   const el=document.getElementById('cpicks');el.innerHTML='';
   const myColor=S.currentUser?S.currentUser.color:null;
-  const used=S.users.filter(u=>myColor?u.color!==myColor:true).map(u=>u.color);
-  let first=true;
+  // 다른 사람이 쓰는 색상 목록 (본인 색상 제외)
+  const othersColors=S.users.filter(u=>u.color!==myColor).map(u=>u.color);
+  let firstAvail=true;
   COLORS.forEach(c=>{
-    const inUse=used.includes(c);
     const isMine=myColor===c;
+    const isOthers=othersColors.includes(c)&&!isMine;
     const d=document.createElement('div');
-    const isSelDefault=!inUse&&(isMine||(first&&!myColor));
-    d.className='cdot'+(inUse?' used':isSelDefault?' sel':'');
-    if(!inUse&&!isMine&&first&&!myColor)first=false;
-    d.style.background=c;d.dataset.color=c;
-    if(!inUse)d.onclick=()=>{document.querySelectorAll('.cdot:not(.used)').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');checkRejoin()};
+    // 모든 색상 클릭 가능 - 본인 색상이면 sel, 아니면 첫번째 가용 색상 sel
+    const isSelDefault=isMine||(firstAvail&&!myColor&&!isOthers);
+    d.className='cdot'+(isSelDefault?' sel':'');
+    if(firstAvail&&!myColor&&!isOthers)firstAvail=false;
+    // 다른 사람 색상은 반투명 표시 (but 클릭 가능 - 재입장 위해)
+    d.style.background=c;
+    d.style.opacity=isOthers?'0.35':'1';
+    d.dataset.color=c;
+    d.title=isOthers?'다른 참여자가 사용 중 (재입장 시 선택 가능)':'';
+    d.onclick=()=>{
+      document.querySelectorAll('.cdot').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+      checkRejoin();
+    };
     el.appendChild(d);
   });
   if(S.currentUser)document.getElementById('user-name').value=S.currentUser.name;
