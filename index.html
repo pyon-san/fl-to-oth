@@ -355,20 +355,11 @@ function mToY(m){return(m/60)*HOUR_H}
 function yToM(y){return Math.round((y/HOUR_H)*60/15)*15}
 
 // ── JSONBin ──
-// 마스터 인덱스: tripId → binId 매핑 저장용 bin
-const MASTER_BIN_LS = 'fltooth_master_bin';
+// 마스터 인덱스: tripId → binId 매핑 (고정 bin)
+const MASTER_BIN_ID = '6a015ca0adc21f119a812630';
 
 async function getMasterBinId(){
-  let id = localStorage.getItem(MASTER_BIN_LS);
-  if(id) return id;
-  // 없으면 새로 생성
-  try{
-    const r = await fetch(PROXY, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({_binName:'fltooth-index',_binPrivate:false})});
-    const j = await r.json();
-    id = j.metadata?.id;
-    if(id) localStorage.setItem(MASTER_BIN_LS, id);
-  }catch(e){}
-  return id;
+  return MASTER_BIN_ID;
 }
 
 async function getIndex(){

@@ -20,17 +20,28 @@ exports.handler = async (event) => {
       'Content-Type': 'application/json',
       'X-Master-Key': JSONBIN_KEY,
     };
-    if (event.httpMethod === 'PUT') fetchHeaders['X-Bin-Versioning'] = 'false';
+
+    let sendBody = undefined;
+
+    if (event.httpMethod === 'PUT') {
+      fetchHeaders['X-Bin-Versioning'] = 'false';
+      sendBody = event.body;
+    }
+
     if (event.httpMethod === 'POST') {
-      const body = JSON.parse(event.body || '{}');
-      if (body._binName) fetchHeaders['X-Bin-Name'] = body._binName;
-      if (body._binPrivate === false) fetchHeaders['X-Bin-Private'] = 'false';
+      const parsed = JSON.parse(event.body || '{}');
+      // 메타 필드 헤더로 분리
+      if (parsed._binName) fetchHeaders['X-Bin-Name'] = parsed._binName;
+      if (parsed._binPrivate === false) fetchHeaders['X-Bin-Private'] = 'false';
+      // 메타 필드 제거한 순수 데이터만 JSONBin에 전송
+      const { _binName, _binPrivate, ...cleanBody } = parsed;
+      sendBody = JSON.stringify(cleanBody);
     }
 
     const res = await fetch(url, {
       method: event.httpMethod,
       headers: fetchHeaders,
-      body: ['POST', 'PUT'].includes(event.httpMethod) ? event.body : undefined,
+      body: sendBody,
     });
 
     const data = await res.json();
