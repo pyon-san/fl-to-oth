@@ -18,7 +18,11 @@
   --radius:6px;--radius-lg:8px;
   --mint:#B8F0E0;--yellow:#FFE600;--black:#111111;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--mint);color:var(--text);min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--mint);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent;}
+*{-webkit-tap-highlight-color:transparent;}
+.ev-block,.bottom-tab,.btn,.cdot,.tab,.uchip,.vcb{-webkit-user-select:none;user-select:none;}
+.ev-block.dragging,.day-cols.dragging{touch-action:none;}
+@media(max-width:600px){:root{--label-w:32px;--hour-h:48px;}}
 .screen{display:none;flex-direction:column;min-height:100vh}
 .screen.active{display:flex}
 
@@ -47,6 +51,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .topbar-title{font-size:14px;font-weight:700;flex:1;color:var(--black);font-family:'Courier New',monospace;letter-spacing:0.05em}
 .tab-bar{display:none}
 .cal-nav{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--mint);border-bottom:2px solid var(--black);position:sticky;top:53px;z-index:18}
+.fixed-mode-banner{display:none;align-items:center;justify-content:center;gap:6px;padding:8px 12px;background:#1D9E75;color:#fff;font-family:'Courier New',monospace;font-size:11px;font-weight:700;letter-spacing:0.1em;position:sticky;top:53px;z-index:17;border-bottom:2px solid var(--black);}
+.fixed-mode-banner.show{display:flex;}
+#screen-main.fixed-mode .topbar{background:#d4f0e6;}
+#screen-main.fixed-mode .cal-nav{background:#d4f0e6;}
+#screen-main.fixed-mode .cal-header{background:#f0faf6;}
+#screen-main.fixed-mode .bottom-tab-bar{background:#d4f0e6;}
+#screen-main.fixed-mode .day-col{background:repeating-linear-gradient(
+  -45deg,
+  transparent,
+  transparent 8px,
+  rgba(29,158,117,0.04) 8px,
+  rgba(29,158,117,0.04) 9px
+);}
 .cal-nav-title{flex:1;font-size:12px;font-weight:700;color:var(--black);text-align:center;font-family:'Courier New',monospace;letter-spacing:0.08em}
 .cal-header{display:flex;padding-left:var(--label-w);border-bottom:1.5px solid var(--black);background:#fff;position:sticky;top:93px;z-index:17}
 .col-header{flex:1;padding:6px 4px;text-align:center;border-left:1px solid var(--border)}
@@ -284,6 +301,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="btn btn-icon btn-sm" onclick="moveWindow(-1)" id="btn-prev"><i class="ti ti-chevron-left"></i></button>
     <div class="cal-nav-title" id="nav-title"></div>
     <button class="btn btn-icon btn-sm" onclick="moveWindow(1)" id="btn-next"><i class="ti ti-chevron-right"></i></button>
+  </div>
+  <div class="fixed-mode-banner" id="fixed-mode-banner">
+    <i class="ti ti-pin"></i> 확정된 일정만 표시 중
   </div>
   <div class="cal-outer">
     <div class="cal-header" id="cal-header"></div>
@@ -716,21 +736,35 @@ function renderCalendar(){
       b.className='ev-block'+(vs.approved?' approved':vs.rejected?' rejected':'');
       b.style.cssText=`top:${top}px;height:${ht}px;background:${user.color}1E;border-color:${user.color};color:${user.color}`;
       const canEdit=S.currentUser&&e.userId===S.currentUser.id&&S.currentTab==='plan';
-      b.innerHTML=`<div class="ev-title">${e.name}</div><div class="ev-meta">${user.name}${e.memo?' · '+e.memo:''}</div>${e.place?`<div class="ev-place-row"><i class="ti ti-map-pin" style="font-size:8px"></i>${e.place}</div>`:''}${vs.total>0?`<div class="ev-vote-badge"><span class="vbadge vbadge-up">👍${vs.up}</span><span class="vbadge vbadge-down">👎${vs.down}</span></div>`:''}${e.fixed?'<div class="fixed-dot"></div>':''}${canEdit?`<div class="resize-h" data-resize="${e.id}"></div>`:''}`;
+      const timeLabel=`${fmt(e.startMin)}~${fmt(e.endMin)}`;
+      const showTime=ht>36;
+      b.innerHTML=`<div class="ev-title">${e.name}</div>${showTime?`<div class="ev-meta" style="font-size:9px;opacity:0.6">${timeLabel}</div>`:''}${ht>52?`<div class="ev-meta">${user.name}${e.memo?' · '+e.memo:''}</div>`:''}${e.place&&ht>64?`<div class="ev-place-row"><i class="ti ti-map-pin" style="font-size:8px"></i>${e.place}</div>`:''}${vs.total>0?`<div class="ev-vote-badge"><span class="vbadge vbadge-up">👍${vs.up}</span><span class="vbadge vbadge-down">👎${vs.down}</span></div>`:''}${e.fixed?'<div class="fixed-dot"></div>':''}${canEdit?`<div class="resize-h" data-resize="${e.id}"></div>`:''}`;
       b.onclick=(ev)=>{if(!ev.target.closest('[data-resize]')&&!moveSt)openDetModal(e.id)};
       if(canEdit){
-        // ── 블록 이동: 마우스 ──
+        // ── 블록 이동: 마우스 (5px 이상 움직여야 이동 모드) ──
+        let _mouseDownX=0,_mouseDownY=0,_mouseMoveReady=false;
         b.addEventListener('mousedown',(ev)=>{
           if(ev.target.closest('[data-resize]'))return;
           ev.stopPropagation();
-          const col=b.closest('.day-col');if(!col)return;
-          const rect=col.getBoundingClientRect();
-          const offsetY=ev.clientY-b.getBoundingClientRect().top;
-          moveSt={evid:e.id,offsetY,origStart:e.startMin,origEnd:e.endMin,origDay:e.day,colRect:rect};
-          b.classList.add('moving');
-          startMoveGhost(b,ev.clientX,ev.clientY,rect);
+          _mouseDownX=ev.clientX;_mouseDownY=ev.clientY;_mouseMoveReady=true;
           ev.preventDefault();
         });
+        b.addEventListener('mousemove',(ev)=>{
+          if(!_mouseMoveReady||moveSt)return;
+          const dx=Math.abs(ev.clientX-_mouseDownX);
+          const dy=Math.abs(ev.clientY-_mouseDownY);
+          if(dx>5||dy>5){
+            _mouseMoveReady=false;
+            const col=b.closest('.day-col');if(!col)return;
+            const rect=col.getBoundingClientRect();
+            const offsetY=_mouseDownY-b.getBoundingClientRect().top;
+            moveSt={evid:e.id,offsetY,origStart:e.startMin,origEnd:e.endMin,origDay:e.day,colRect:rect};
+            b.classList.add('moving');
+            document.body.style.overflow='hidden';
+            startMoveGhost(b,ev.clientX,ev.clientY,rect);
+          }
+        });
+        b.addEventListener('mouseup',()=>{_mouseMoveReady=false;});
         // ── 블록 이동: 터치 (꾹 누르기 500ms) ──
         let _longPressTimer=null,_touchMoved=false;
         b.addEventListener('touchstart',(ev)=>{
@@ -744,6 +778,7 @@ function renderCalendar(){
             const offsetY=t.clientY-b.getBoundingClientRect().top;
             moveSt={evid:e.id,offsetY,origStart:e.startMin,origEnd:e.endMin,origDay:e.day,colRect:rect};
             b.classList.add('moving');
+            document.body.style.overflow='hidden';
             startMoveGhost(b,t.clientX,t.clientY,rect);
             navigator.vibrate&&navigator.vibrate(30);
           },500);
@@ -813,6 +848,7 @@ async function onMoveEnd(clientX, clientY){
   if(!moveSt){return;}
   const ev=S.events.find(x=>x.id===moveSt.evid);
   document.querySelectorAll('.move-ghost').forEach(x=>x.remove());
+  document.body.style.overflow='';
   if(ev){
     const col=document.elementFromPoint(clientX,clientY)?.closest('.day-col');
     const targetRect=col?col.getBoundingClientRect():moveSt.colRect;
@@ -844,6 +880,8 @@ function setupDrag(){
     const startMin=yToM(y);
     dragSt={startMin,endMin:startMin+60,startY:clientY,colDay:col.dataset.day,colRect:rect};
     ghost.style.cssText=`display:block;left:${rect.left+2}px;width:${rect.width-4}px;top:${rect.top+mToY(startMin)}px;height:${mToY(60)}px`;
+    document.getElementById('day-cols').classList.add('dragging');
+    document.body.style.overflow='hidden';
   }
 
   // 공통: 드래그 이동
@@ -866,6 +904,8 @@ function setupDrag(){
   async function onDragEnd(){
     if(dragSt){
       ghost.style.display='none';
+      document.getElementById('day-cols').classList.remove('dragging');
+      document.body.style.overflow='';
       pendingDrag={startMin:dragSt.startMin,endMin:dragSt.endMin,day:dragSt.colDay};
       editEvId=null;
       ['ev-name','ev-place','ev-link','ev-memo'].forEach(id=>document.getElementById(id).value='');
@@ -1005,10 +1045,37 @@ function openDetModal(evid){
   btns.innerHTML='';
   const isOwner=S.currentUser&&ev.userId===S.currentUser.id&&S.currentTab==='plan';
   if(isOwner){
-    btns.innerHTML+='<button class="btn btn-sm" onclick="editEvModal(\''+evid+'\')">수정</button>';
-    if(!ev.fixed)btns.innerHTML+='<button class="btn btn-success btn-sm" onclick="fixEv(\''+evid+'\')"><i class="ti ti-check"></i> 확정</button>';
-    else btns.innerHTML+='<button class="btn btn-sm" onclick="unfixEv(\''+evid+'\')">확정 취소</button>';
-    btns.innerHTML+='<button class="btn btn-danger btn-sm" onclick="delEv(\''+evid+'\')">삭제</button>';
+    const editBtn=document.createElement('button');
+    editBtn.className='btn btn-sm';editBtn.textContent='수정';
+    editBtn.addEventListener('click',()=>editEvModal(evid));
+    btns.appendChild(editBtn);
+
+    if(!ev.fixed){
+      const fixBtn=document.createElement('button');
+      fixBtn.className='btn btn-success btn-sm';
+      fixBtn.innerHTML='<i class="ti ti-check"></i> 확정';
+      fixBtn.addEventListener('click',()=>fixEv(evid));
+      btns.appendChild(fixBtn);
+    } else {
+      const unfixBtn=document.createElement('button');
+      unfixBtn.className='btn btn-sm';unfixBtn.textContent='확정 취소';
+      unfixBtn.addEventListener('click',()=>unfixEv(evid));
+      btns.appendChild(unfixBtn);
+    }
+
+    const delBtn=document.createElement('button');
+    delBtn.className='btn btn-danger btn-sm';delBtn.textContent='삭제';
+    delBtn.addEventListener('click',()=>{
+      // 삭제 확인 토스트
+      const confirmBanner=document.createElement('div');
+      confirmBanner.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--black);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:999;display:flex;gap:10px;align-items:center;white-space:nowrap;border:2px solid var(--danger)';
+      confirmBanner.innerHTML=`<span>정말 삭제할까요?</span><button style="background:var(--danger);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Courier New',monospace" id="confirm-del-yes">삭제</button><button style="background:#444;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Courier New',monospace" id="confirm-del-no">취소</button>`;
+      document.body.appendChild(confirmBanner);
+      document.getElementById('confirm-del-yes').addEventListener('click',()=>{confirmBanner.remove();delEv(evid);});
+      document.getElementById('confirm-del-no').addEventListener('click',()=>confirmBanner.remove());
+      setTimeout(()=>{if(document.body.contains(confirmBanner))confirmBanner.remove();},4000);
+    });
+    btns.appendChild(delBtn);
   }
   document.getElementById('detail-modal').classList.add('open');
 }
@@ -1077,12 +1144,21 @@ async function delEv(evid){S.events=S.events.filter(e=>e.id!==evid);await dbSave
 function switchTab(tab){
   S.currentTab=tab;
   ['plan','fixed'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
-  // 하단 탭바 동기화
   ['plan','fixed'].forEach(t=>{
     const bt=document.getElementById('btab-'+t);
     if(bt)bt.classList.toggle('active',t===tab);
   });
   document.getElementById('cal-hint').textContent=tab==='plan'?'드래그해서 일정 추가':'확정된 일정만 표시';
+  // 확정 모드 배경 + 배너
+  const main=document.getElementById('screen-main');
+  const banner=document.getElementById('fixed-mode-banner');
+  if(tab==='fixed'){
+    main.classList.add('fixed-mode');
+    if(banner)banner.classList.add('show');
+  } else {
+    main.classList.remove('fixed-mode');
+    if(banner)banner.classList.remove('show');
+  }
   renderCalendar();
 }
 
