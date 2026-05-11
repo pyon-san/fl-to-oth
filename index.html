@@ -74,7 +74,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cal-body{display:flex;position:relative;min-height:1248px}
 .time-col{width:var(--label-w);flex-shrink:0;position:relative}
 .hour-label{position:absolute;left:0;width:var(--label-w);font-size:10px;color:var(--text3);padding-right:7px;text-align:right;margin-top:-6px;font-family:'Courier New',monospace}
-.day-cols{flex:1;display:flex;position:relative}
+.day-cols{flex:1;display:flex;position:relative;touch-action:pan-y;}
 .day-col{flex:1;border-left:1px solid var(--border);position:relative;min-width:0}
 .day-col:first-child{border-left:none}
 .hour-line{position:absolute;left:0;right:0;border-bottom:0.5px solid var(--border)}
@@ -931,43 +931,72 @@ function setupDrag(){
 
   // ── 터치 이벤트 ──
   // touchstart: preventDefault 없이 시작 위치만 기록
+  // ── 터치: 빈 공간 드래그로 새 일정 추가 ──
+  // 전략: 500ms 홀드 후에만 드래그 시작, 탭은 절대 드래그 안 됨
   let touchStartX=0, touchStartY=0, touchDragging=false;
+  let touchHoldTimer=null, touchHoldFired=false;
+
   dc.ontouchstart=(e)=>{
     const t=e.touches[0];
-    touchStartX=t.clientX;touchStartY=t.clientY;
-    touchDragging=false;
-    // 리사이즈 핸들은 바로 처리
+    touchStartX=t.clientX; touchStartY=t.clientY;
+    touchDragging=false; touchHoldFired=false;
+
+    // 리사이즈 핸들 처리
     const rs=document.elementFromPoint(t.clientX,t.clientY)?.closest('[data-resize]');
     if(rs){
       const ev=S.events.find(x=>x.id===rs.dataset.resize);
       if(ev){resizeSt={evid:ev.id,startY:t.clientY,origEnd:ev.endMin};e.preventDefault();}
+      return;
     }
+    // 기존 블록 위면 무시 (블록 자체 터치 이벤트에서 처리)
+    if(e.target.closest('.ev-block')) return;
+    // 빈 공간: 500ms 홀드 후 드래그 시작
+    const col=e.target.closest('.day-col'); if(!col) return;
+    touchHoldTimer=setTimeout(()=>{
+      touchHoldFired=true;
+      navigator.vibrate&&navigator.vibrate(20);
+      onDragStart(touchStartX, touchStartY, document.elementFromPoint(touchStartX,touchStartY));
+      touchDragging=true;
+      document.body.style.overflow='hidden';
+    }, 500);
   };
+
   dc.ontouchmove=(e)=>{
     const t=e.touches[0];
     const dx=Math.abs(t.clientX-touchStartX);
     const dy=Math.abs(t.clientY-touchStartY);
+
+    // 블록 이동 중
     if(moveSt){
       updateMoveGhost(t.clientX,t.clientY,moveSt.colRect);
-      e.preventDefault();return;
+      e.preventDefault(); return;
     }
-    // 수평 이동이 수직보다 크거나 수직 이동 30px 미만이면 스크롤 허용
-    if(!touchDragging){
-      if(dx>dy)return; // 수평 스크롤 허용
-      if(dy<30)return; // 30px 미만이면 스크롤 우선
-      // 수직 30px 이상 + 수직>수평 이면 드래그 시작
-      touchDragging=true;
-      onDragStart(touchStartX,touchStartY,document.elementFromPoint(touchStartX,touchStartY));
+    // 리사이즈 중
+    if(resizeSt){
+      onDragMove(t.clientX,t.clientY);
+      e.preventDefault(); return;
     }
-    if(touchDragging||resizeSt){
+    // 홀드 대기 중 손가락 움직이면 홀드 취소 (스크롤 허용)
+    if(touchHoldTimer&&!touchHoldFired){
+      if(dx>8||dy>8){
+        clearTimeout(touchHoldTimer); touchHoldTimer=null;
+      }
+      return;
+    }
+    // 드래그 중
+    if(touchDragging){
       onDragMove(t.clientX,t.clientY);
       e.preventDefault();
     }
   };
+
   dc.ontouchend=(e)=>{
+    if(touchHoldTimer){clearTimeout(touchHoldTimer);touchHoldTimer=null;}
     if(moveSt){onMoveEnd(e.changedTouches[0].clientX,e.changedTouches[0].clientY);touchDragging=false;return;}
-    if(touchDragging||resizeSt) onDragEnd();
-    touchDragging=false;
+    if(resizeSt){onDragEnd();touchDragging=false;return;}
+    if(touchDragging){onDragEnd();}
+    touchDragging=false; touchHoldFired=false;
+    document.body.style.overflow='';
   };
 }
 
