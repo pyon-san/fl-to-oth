@@ -378,7 +378,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="fr"><label>메모</label><input type="text" id="ev-memo" placeholder="예: 예약 필수"/></div>
       <button onclick="closeEvModal()" style="position:absolute;top:20px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1;padding:4px">×</button>
       <div class="mbtns">
-        <button class="btn btn-primary btn-sm" onclick="saveEvent()">저장</button>
+        <button class="btn btn-primary btn-sm" id="save-ev-btn">저장</button>
       </div>
       </div>
     </div>
@@ -393,8 +393,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="vote-section">
         <div class="vote-section-title">찬반 투표</div>
         <div class="vote-btns">
-          <button class="vcb" id="vup-btn" onclick="castVote('up')"><i class="ti ti-thumb-up"></i> 찬성 <span id="vup-cnt">0</span></button>
-          <button class="vcb" id="vdn-btn" onclick="castVote('down')"><i class="ti ti-thumb-down"></i> 반대 <span id="vdn-cnt">0</span></button>
+          <button class="vcb" id="vup-btn"><i class="ti ti-thumb-up"></i> 찬성 <span id="vup-cnt">0</span></button>
+          <button class="vcb" id="vdn-btn"><i class="ti ti-thumb-down"></i> 반대 <span id="vdn-cnt">0</span></button>
         </div>
         <div class="vbar-row"><span style="font-size:11px;color:var(--success-dark);width:28px;flex-shrink:0">찬성</span><div class="vbar-bg"><div class="vbar-fill" id="vup-bar" style="background:var(--success);width:0%"></div></div><span style="font-size:11px;color:var(--text3);width:32px;text-align:right;flex-shrink:0" id="vup-pct"></span></div>
         <div class="vbar-row"><span style="font-size:11px;color:var(--danger-dark);width:28px;flex-shrink:0">반대</span><div class="vbar-bg"><div class="vbar-fill" id="vdn-bar" style="background:var(--danger);width:0%"></div></div><span style="font-size:11px;color:var(--text3);width:32px;text-align:right;flex-shrink:0" id="vdn-pct"></span></div>
@@ -1068,11 +1068,20 @@ function openDetModal(evid){
     delBtn.addEventListener('click',()=>{
       // 삭제 확인 토스트
       const confirmBanner=document.createElement('div');
-      confirmBanner.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--black);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:999;display:flex;gap:10px;align-items:center;white-space:nowrap;border:2px solid var(--danger)';
-      confirmBanner.innerHTML=`<span>정말 삭제할까요?</span><button style="background:var(--danger);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Courier New',monospace" id="confirm-del-yes">삭제</button><button style="background:#444;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Courier New',monospace" id="confirm-del-no">취소</button>`;
+      confirmBanner.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:999;display:flex;gap:10px;align-items:center;white-space:nowrap;border:2px solid #E24B4A';
+      const _msg=document.createElement('span');_msg.textContent='정말 삭제할까요?';
+      const _yes=document.createElement('button');
+      _yes.textContent='삭제';
+      _yes.style.cssText='background:#E24B4A;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;min-height:32px';
+      _yes.addEventListener('click',()=>{confirmBanner.remove();delEv(evid);});
+      const _no=document.createElement('button');
+      _no.textContent='취소';
+      _no.style.cssText='background:#444;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;min-height:32px';
+      _no.addEventListener('click',()=>confirmBanner.remove());
+      confirmBanner.appendChild(_msg);
+      confirmBanner.appendChild(_yes);
+      confirmBanner.appendChild(_no);
       document.body.appendChild(confirmBanner);
-      document.getElementById('confirm-del-yes').addEventListener('click',()=>{confirmBanner.remove();delEv(evid);});
-      document.getElementById('confirm-del-no').addEventListener('click',()=>confirmBanner.remove());
       setTimeout(()=>{if(document.body.contains(confirmBanner))confirmBanner.remove();},4000);
     });
     btns.appendChild(delBtn);
@@ -1207,6 +1216,11 @@ function handleOverlayClick(e, modalId){
 function copyUrl(){
   navigator.clipboard.writeText(shareUrl()).then(()=>toast('링크 복사됐어요!')).catch(()=>toast(shareUrl()));
 }
+
+// ── async onclick 안전 바인딩 ──
+document.getElementById('save-ev-btn').addEventListener('click',()=>saveEvent().catch(console.error));
+document.getElementById('vup-btn').addEventListener('click',()=>castVote('up').catch(console.error));
+document.getElementById('vdn-btn').addEventListener('click',()=>castVote('down').catch(console.error));
 
 // ── Pull to Refresh ──
 (()=>{
