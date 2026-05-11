@@ -475,6 +475,15 @@ async function joinTrip(){
   hideLoading();
   if(!ok){toast('여행을 찾을 수 없어요');return}
   S.tripId=code;
+  // 이전에 이 여행에 입장한 적 있으면 유저 복원
+  try{
+    const saved=localStorage.getItem('fltooth_user_'+code);
+    if(saved){
+      const u=JSON.parse(saved);
+      const found=S.users.find(x=>x.id===u.id);
+      if(found) S.currentUser=found;
+    }
+  }catch(e){}
   document.getElementById('name-sub').textContent=`"${S.tripName}" 여행`;
   renderCPicks();
   showScreen('name');
@@ -530,6 +539,7 @@ async function enterTrip(){
   }
   localStorage.setItem('fltooth_user_'+S.tripId,JSON.stringify(S.currentUser));
   renderMain();showScreen('main');
+  startPolling();
 }
 
 // ── 메인 ──
@@ -537,6 +547,42 @@ function renderMain(){
   document.getElementById('main-title').textContent=S.tripName;
   S.windowStart=0;
   renderCalendar();renderLegend();renderUserChip();
+}
+
+// ── 폴링 (8초마다 최신 데이터 동기화) ──
+let _pollTimer = null;
+
+async function pollSync(){
+  if(!S.tripId) return;
+  const binId = localStorage.getItem('fltooth_bin_'+S.tripId);
+  if(!binId) return;
+  try{
+    const r = await fetch(`${PROXY}?path=${binId}/latest`);
+    if(!r.ok) return;
+    const j = await r.json();
+    const d = j.record;
+    if(!d) return;
+    // 데이터 변경 여부 확인 (이벤트/유저 수 비교)
+    const changed =
+      JSON.stringify(d.events||[]) !== JSON.stringify(S.events) ||
+      JSON.stringify(d.users||[]) !== JSON.stringify(S.users);
+    if(changed){
+      S.events = d.events||[];
+      S.users = d.users||[];
+      renderCalendar();
+      renderLegend();
+      renderUserChip();
+    }
+  }catch(e){}
+}
+
+function startPolling(){
+  stopPolling();
+  _pollTimer = setInterval(pollSync, 8000);
+}
+
+function stopPolling(){
+  if(_pollTimer){ clearInterval(_pollTimer); _pollTimer=null; }
 }
 
 function moveWindow(dir){
@@ -812,7 +858,7 @@ function renderUserChip(){
 }
 
 function changeUser(){
-  // currentUser는 유지하되 화면만 전환 (본인 색상 선택 가능하게)
+  stopPolling();
   renderCPicks();
   document.getElementById('rejoin-hint').style.display='none';
   document.getElementById('name-sub').textContent=`"${S.tripName}" - 사용자 전환`;
@@ -855,10 +901,14 @@ document.getElementById('trip-end').value=localDateStr(_tom);
     if(saved){
       const u=JSON.parse(saved);
       const found=S.users.find(x=>x.id===u.id);
-      if(found){S.currentUser=found;renderMain();showScreen('main');return}
+      if(found){
+        S.currentUser=found;
+        renderMain();showScreen('main');
+        startPolling();return;
+      }
     }
   }catch(e){}
-  // 유저 정보 없으면 이름 입력
+  // 유저 정보 없으면 이름 입력 (currentUser null 상태)
   document.getElementById('name-sub').textContent=`"${S.tripName}" 여행`;
   renderCPicks();
   showScreen('name');
