@@ -32,7 +32,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .home-retro{background:#fff;border:2.5px solid var(--black);border-radius:6px;padding:1.4rem;width:100%;max-width:440px}
 .join-retro{background:var(--yellow);border:2.5px solid var(--black);border-radius:6px;padding:1rem;width:100%;max-width:440px}
 .retro-card-lbl{font-family:'Courier New',monospace;font-size:10px;font-weight:700;letter-spacing:0.22em;color:var(--black);margin-bottom:10px}
-.home-retro .fr input[type=text],.home-retro .fr input[type=date]{border:2px solid var(--black);border-radius:4px;background:var(--mint);outline:none}
+.home-retro .fr input[type=text],.home-retro .fr input[type=date]{border:2px solid var(--black);border-radius:4px;background:var(--mint);outline:none;-webkit-appearance:none;appearance:none;font-size:14px;padding:9px 12px;}
 
 #screen-name{align-items:center;justify-content:center;padding:2rem;background:var(--mint);min-height:100vh}
 .name-card{width:100%;max-width:380px;background:#fff;border:2.5px solid var(--black);border-radius:8px;padding:1.6rem}
@@ -45,12 +45,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #screen-main{flex:1;background:var(--bg)}
 .topbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:2px solid var(--black);background:var(--mint);position:sticky;top:0;z-index:20}
 .topbar-title{font-size:14px;font-weight:700;flex:1;color:var(--black);font-family:'Courier New',monospace;letter-spacing:0.05em}
-.tab-bar{display:flex;border-bottom:2px solid var(--black);background:#fff;position:sticky;top:53px;z-index:19}
-.tab{flex:1;padding:10px 4px;font-size:12px;text-align:center;cursor:pointer;color:var(--text2);border-bottom:3px solid transparent;transition:all 0.12s;font-family:'Courier New',monospace;font-weight:700;letter-spacing:0.03em}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.cal-nav{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--mint);border-bottom:2px solid var(--black);position:sticky;top:93px;z-index:18}
+.tab-bar{display:none}
+.cal-nav{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--mint);border-bottom:2px solid var(--black);position:sticky;top:53px;z-index:18}
 .cal-nav-title{flex:1;font-size:12px;font-weight:700;color:var(--black);text-align:center;font-family:'Courier New',monospace;letter-spacing:0.08em}
-.cal-header{display:flex;padding-left:var(--label-w);border-bottom:1.5px solid var(--black);background:#fff;position:sticky;top:133px;z-index:17}
+.cal-header{display:flex;padding-left:var(--label-w);border-bottom:1.5px solid var(--black);background:#fff;position:sticky;top:93px;z-index:17}
 .col-header{flex:1;padding:6px 4px;text-align:center;border-left:1px solid var(--border)}
 .col-header:first-child{border-left:none}
 .col-h-day{font-size:11px;color:var(--text2);font-family:'Courier New',monospace}
@@ -77,10 +75,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .resize-h{position:absolute;bottom:0;left:0;right:0;height:8px;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
 .resize-h::after{content:'';width:16px;height:2px;background:rgba(0,0,0,0.2);border-radius:1px}
 .drag-ghost{position:fixed;border-radius:5px;pointer-events:none;opacity:0.35;border:2px dashed var(--accent);background:rgba(247,37,133,0.08);display:none;z-index:50}
+.ev-block.moving{opacity:0.35;pointer-events:none;}
+.move-ghost{position:absolute;border-radius:5px;pointer-events:none;opacity:0.8;border:2px solid var(--accent);z-index:10;left:2px;right:2px;display:none;}
 .legend{display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1.5px solid var(--black);background:var(--mint);position:sticky;bottom:52px;z-index:16}
 .litem{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
 .ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.bottom-bar{padding:10px 12px;border-top:2px solid var(--black);background:#fff;display:flex;gap:8px;align-items:center;position:sticky;bottom:0;z-index:16}
+/* ── 하단 탭바 ── */
+.bottom-tab-bar{display:flex;background:#fff;border-top:2px solid var(--black);position:fixed;bottom:0;left:0;right:0;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;color:var(--text3);font-family:'Courier New',monospace;font-size:10px;font-weight:700;letter-spacing:0.05em;gap:3px;min-height:52px;border:none;background:transparent;transition:color 0.12s}
+.bottom-tab.active{color:var(--accent)}
+.bottom-tab i{font-size:20px}
+.bottom-tab-user{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;min-height:52px;gap:3px}
+.bottom-tab-user-dot{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--black)}
+.bottom-tab-user-name{font-family:'Courier New',monospace;font-size:10px;font-weight:700;color:var(--text2);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── 레거시 bottom-bar 숨김 ── */
+.bottom-bar{display:none}
+.legend{bottom:56px}
+
+/* ── 바텀 시트 모달 ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg);border-radius:16px 16px 0 0;padding:0;width:100%;max-width:100%;border:2.5px solid var(--black);border-bottom:none;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 0}
+.modal-inner{padding:1rem 1.4rem 1.4rem}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text);font-family:'Courier New',monospace;letter-spacing:0.04em}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap}
+
+/* ── Pull to refresh ── */
+.ptr-indicator{position:fixed;top:0;left:0;right:0;height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--mint);z-index:100;transition:height 0.2s;font-family:'Courier New',monospace;font-size:11px;font-weight:700;color:var(--black);letter-spacing:0.1em;border-bottom:2px solid var(--black)}
+.ptr-spinner{width:18px;height:18px;border:2px solid var(--black);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;display:none}
+
+/* ── Safe area ── */
+#screen-main{padding-bottom:calc(56px + env(safe-area-inset-bottom))}
+#screen-home{padding-bottom:max(2rem,env(safe-area-inset-bottom))}
+
+/* ── 터치 영역 최소 44px ── */
+.btn-sm{min-height:36px;min-width:44px}
+.vcb{min-height:44px}
+.cdot{width:32px;height:32px}
+
 .uchip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:2px solid var(--black);font-size:12px;cursor:pointer;background:var(--mint);color:var(--black);font-family:'Courier New',monospace;font-weight:700}
 .uchip:hover{background:#9de8d0}
 .udot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -88,6 +122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fr{display:flex;flex-direction:column;gap:5px;margin-bottom:0.9rem}
 .fr label{font-size:12px;color:var(--text2);font-weight:600;font-family:'Courier New',monospace;letter-spacing:0.04em}
 .fr input[type=text],.fr input[type=date],.fr input[type=url]{width:100%;padding:9px 12px;font-size:14px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s}
+.fr input[type=date]{-webkit-appearance:none;appearance:none;min-height:unset;}
 .fr input:focus{border-color:var(--accent)}
 .date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .time-select{flex:1;padding:9px 12px;font-size:14px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
@@ -268,8 +303,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <span style="font-size:11px;color:var(--text3);font-family:'Courier New',monospace" id="cal-hint">드래그해서 일정 추가</span>
   </div>
 
-  <div class="modal-overlay" id="ev-modal">
+  <!-- 하단 탭바 -->
+  <div class="bottom-tab-bar">
+    <button class="bottom-tab active" id="btab-plan" onclick="switchTab('plan')">
+      <i class="ti ti-pencil"></i>
+      <span>입력</span>
+    </button>
+    <button class="bottom-tab" id="btab-fixed" onclick="switchTab('fixed')">
+      <i class="ti ti-check"></i>
+      <span>확정</span>
+    </button>
+    <button class="bottom-tab" onclick="openShare()">
+      <i class="ti ti-share"></i>
+      <span>공유</span>
+    </button>
+    <div class="bottom-tab-user" onclick="changeUser()">
+      <div class="bottom-tab-user-dot" id="btab-user-dot"></div>
+      <div class="bottom-tab-user-name" id="btab-user-name">나</div>
+    </div>
+  </div>
+
+  <!-- Pull to refresh -->
+  <div class="ptr-indicator" id="ptr-indicator">
+    <div class="ptr-spinner" id="ptr-spinner"></div>
+    <span id="ptr-txt">당겨서 새로고침</span>
+  </div>
+
+  <div class="modal-overlay" id="ev-modal" onclick="handleOverlayClick(event,'ev-modal')">
     <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-inner">
       <h3 id="ev-modal-title">일정 추가</h3>
       <div class="fr"><label>일정 이름 *</label><input type="text" id="ev-name" placeholder="예: 도톤보리 관광"/></div>
       <div class="fr" id="ev-time-row" style="display:none">
@@ -297,11 +360,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button class="btn btn-sm" onclick="closeEvModal()">취소</button>
         <button class="btn btn-primary btn-sm" onclick="saveEvent()">저장</button>
       </div>
+      </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="detail-modal">
-    <div class="modal" style="max-width:340px">
+  <div class="modal-overlay" id="detail-modal" onclick="handleOverlayClick(event,'detail-modal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-inner">
       <h3 id="det-title"></h3>
       <div id="det-body" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
       <div class="vote-section">
@@ -315,11 +381,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="vnames" id="vnames"></div>
       </div>
       <div class="mbtns" id="det-btns"></div>
+      </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="share-modal">
-    <div class="modal" style="max-width:340px">
+  <div class="modal-overlay" id="share-modal" onclick="handleOverlayClick(event,'share-modal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-inner">
       <h3>공유 & 참여자</h3>
       <div style="font-size:13px;color:var(--text2)">아래 링크를 친구에게 공유하세요</div>
       <div class="share-box" id="share-url" onclick="copyUrl()"></div>
@@ -327,6 +396,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div style="font-size:13px;font-weight:700;margin:1rem 0 6px;color:var(--text);font-family:'Courier New',monospace;letter-spacing:0.04em">참여자</div>
       <div class="plist" id="plist"></div>
       <div class="mbtns"><button class="btn btn-sm" onclick="closeShare()">닫기</button></div>
+      </div>
     </div>
   </div>
 </div>
@@ -340,7 +410,7 @@ const DAYS_KO = ['일','월','화','수','목','금','토'];
 const HOUR_H = 52, COL_COUNT = 3;
 
 let S = {tripId:null,tripName:'',days:[],events:[],users:[],currentUser:null,windowStart:0,currentTab:'plan'};
-let dragSt=null,resizeSt=null,pendingDrag=null,editEvId=null,detailEvId=null;
+let dragSt=null,resizeSt=null,moveSt=null,pendingDrag=null,editEvId=null,detailEvId=null;
 
 // ── 유틸 ──
 function genId(){return Math.random().toString(36).slice(2,9)}
@@ -647,12 +717,100 @@ function renderCalendar(){
       b.style.cssText=`top:${top}px;height:${ht}px;background:${user.color}1E;border-color:${user.color};color:${user.color}`;
       const canEdit=S.currentUser&&e.userId===S.currentUser.id&&S.currentTab==='plan';
       b.innerHTML=`<div class="ev-title">${e.name}</div><div class="ev-meta">${user.name}${e.memo?' · '+e.memo:''}</div>${e.place?`<div class="ev-place-row"><i class="ti ti-map-pin" style="font-size:8px"></i>${e.place}</div>`:''}${vs.total>0?`<div class="ev-vote-badge"><span class="vbadge vbadge-up">👍${vs.up}</span><span class="vbadge vbadge-down">👎${vs.down}</span></div>`:''}${e.fixed?'<div class="fixed-dot"></div>':''}${canEdit?`<div class="resize-h" data-resize="${e.id}"></div>`:''}`;
-      b.onclick=(ev)=>{if(!ev.target.closest('[data-resize]'))openDetModal(e.id)};
+      b.onclick=(ev)=>{if(!ev.target.closest('[data-resize]')&&!moveSt)openDetModal(e.id)};
+      if(canEdit){
+        // ── 블록 이동: 마우스 ──
+        b.addEventListener('mousedown',(ev)=>{
+          if(ev.target.closest('[data-resize]'))return;
+          ev.stopPropagation();
+          const col=b.closest('.day-col');if(!col)return;
+          const rect=col.getBoundingClientRect();
+          const offsetY=ev.clientY-b.getBoundingClientRect().top;
+          moveSt={evid:e.id,offsetY,origStart:e.startMin,origEnd:e.endMin,origDay:e.day,colRect:rect};
+          b.classList.add('moving');
+          startMoveGhost(b,ev.clientX,ev.clientY,rect);
+          ev.preventDefault();
+        });
+        // ── 블록 이동: 터치 (꾹 누르기 500ms) ──
+        let _longPressTimer=null,_touchMoved=false;
+        b.addEventListener('touchstart',(ev)=>{
+          if(ev.target.closest('[data-resize]'))return;
+          _touchMoved=false;
+          _longPressTimer=setTimeout(()=>{
+            if(_touchMoved)return;
+            const t=ev.touches[0];
+            const col=b.closest('.day-col');if(!col)return;
+            const rect=col.getBoundingClientRect();
+            const offsetY=t.clientY-b.getBoundingClientRect().top;
+            moveSt={evid:e.id,offsetY,origStart:e.startMin,origEnd:e.endMin,origDay:e.day,colRect:rect};
+            b.classList.add('moving');
+            startMoveGhost(b,t.clientX,t.clientY,rect);
+            navigator.vibrate&&navigator.vibrate(30);
+          },500);
+        },{passive:true});
+        b.addEventListener('touchmove',()=>{_touchMoved=true;if(_longPressTimer){clearTimeout(_longPressTimer);_longPressTimer=null;}},{passive:true});
+        b.addEventListener('touchend',(ev)=>{
+          if(_longPressTimer){clearTimeout(_longPressTimer);_longPressTimer=null;}
+          if(moveSt){onMoveEnd(ev.changedTouches[0].clientX,ev.changedTouches[0].clientY);return;}
+          if(!_touchMoved&&!ev.target.closest('[data-resize]')){ev.preventDefault();openDetModal(e.id);}
+        });
+      } else {
+        // 본인 블록 아니면 그냥 탭으로 모달
+        let _touchMoved=false;
+        b.addEventListener('touchstart',()=>{_touchMoved=false},{passive:true});
+        b.addEventListener('touchmove',()=>{_touchMoved=true},{passive:true});
+        b.addEventListener('touchend',(ev)=>{
+          if(!_touchMoved&&!ev.target.closest('[data-resize]')){ev.preventDefault();openDetModal(e.id);}
+        });
+      }
       col.appendChild(b);
     });
     dc.appendChild(col);
   });
   setupDrag();
+}
+
+// ── 블록 이동 헬퍼 ──
+function startMoveGhost(b, clientX, clientY, colRect){
+  let mg=document.getElementById('move-ghost');
+  if(!mg){mg=document.createElement('div');mg.id='move-ghost';mg.className='move-ghost';document.getElementById('day-cols').appendChild(mg);}
+  const ev=S.events.find(x=>x.id===moveSt.evid);if(!ev)return;
+  mg.style.height=mToY(ev.endMin-ev.startMin)+'px';
+  mg.style.background=b.style.background.replace('1E','88');
+  mg.style.borderColor=b.style.borderColor;
+  mg.style.display='block';
+  updateMoveGhost(clientX,clientY,colRect);
+}
+
+function updateMoveGhost(clientX, clientY, colRect){
+  const mg=document.getElementById('move-ghost');if(!mg||!moveSt)return;
+  const ev=S.events.find(x=>x.id===moveSt.evid);if(!ev)return;
+  const col=document.elementFromPoint(clientX,clientY)?.closest('.day-col');
+  const targetRect=col?col.getBoundingClientRect():colRect;
+  const y=clientY-targetRect.top-moveSt.offsetY;
+  const newStart=Math.max(0,Math.min(23*60,yToM(y)));
+  mg.style.top=mToY(newStart)+'px';
+  mg.style.height=mToY(ev.endMin-ev.startMin)+'px';
+}
+
+async function onMoveEnd(clientX, clientY){
+  if(!moveSt){return;}
+  const ev=S.events.find(x=>x.id===moveSt.evid);
+  const mg=document.getElementById('move-ghost');
+  if(mg)mg.style.display='none';
+  if(ev){
+    const col=document.elementFromPoint(clientX,clientY)?.closest('.day-col');
+    const targetRect=col?col.getBoundingClientRect():moveSt.colRect;
+    const y=clientY-targetRect.top-moveSt.offsetY;
+    const newStart=Math.max(0,Math.min(23*60,yToM(y)));
+    const duration=ev.endMin-ev.startMin;
+    ev.startMin=newStart;
+    ev.endMin=Math.min(24*60,newStart+duration);
+    if(col&&col.dataset.day)ev.day=col.dataset.day;
+    await dbSave();
+  }
+  moveSt=null;
+  renderCalendar();
 }
 
 function setupDrag(){
@@ -707,21 +865,51 @@ function setupDrag(){
 
   // ── 마우스 이벤트 ──
   dc.onmousedown=(e)=>{onDragStart(e.clientX,e.clientY,e.target);e.preventDefault()};
-  document.onmousemove=(e)=>onDragMove(e.clientX,e.clientY);
-  document.onmouseup=()=>onDragEnd();
+  document.onmousemove=(e)=>{
+    onDragMove(e.clientX,e.clientY);
+    if(moveSt)updateMoveGhost(e.clientX,e.clientY,moveSt.colRect);
+  };
+  document.onmouseup=(e)=>{
+    if(moveSt){onMoveEnd(e.clientX,e.clientY);return;}
+    onDragEnd();
+  };
 
   // ── 터치 이벤트 ──
+  // touchstart: preventDefault 없이 시작 위치만 기록
+  let touchStartX=0, touchStartY=0, touchDragging=false;
   dc.ontouchstart=(e)=>{
     const t=e.touches[0];
-    onDragStart(t.clientX,t.clientY,document.elementFromPoint(t.clientX,t.clientY));
-    e.preventDefault();
+    touchStartX=t.clientX;touchStartY=t.clientY;
+    touchDragging=false;
+    // 리사이즈 핸들은 바로 처리
+    const rs=document.elementFromPoint(t.clientX,t.clientY)?.closest('[data-resize]');
+    if(rs){
+      const ev=S.events.find(x=>x.id===rs.dataset.resize);
+      if(ev){resizeSt={evid:ev.id,startY:t.clientY,origEnd:ev.endMin};e.preventDefault();}
+    }
   };
   dc.ontouchmove=(e)=>{
     const t=e.touches[0];
-    onDragMove(t.clientX,t.clientY);
-    e.preventDefault();
+    const dx=Math.abs(t.clientX-touchStartX);
+    const dy=Math.abs(t.clientY-touchStartY);
+    if(moveSt){
+      updateMoveGhost(t.clientX,t.clientY,moveSt.colRect);
+      e.preventDefault();return;
+    }
+    if(!touchDragging&&dy>10&&dy>dx){
+      touchDragging=true;
+      onDragStart(touchStartX,touchStartY,document.elementFromPoint(touchStartX,touchStartY));
+    }
+    if(touchDragging||resizeSt){
+      onDragMove(t.clientX,t.clientY);
+      e.preventDefault();
+    }
   };
-  dc.ontouchend=()=>onDragEnd();
+  dc.ontouchend=(e)=>{
+    if(moveSt){onMoveEnd(e.changedTouches[0].clientX,e.changedTouches[0].clientY);touchDragging=false;return;}
+    if(touchDragging||resizeSt) onDragEnd();
+    touchDragging=false;
+  };
 }
 
 function previewLink(url){
@@ -738,7 +926,7 @@ function previewLink(url){
   }catch{el.style.display='none'}
 }
 
-function closeEvModal(){document.getElementById('ev-modal').classList.remove('open')}
+function closeEvModal(){document.getElementById('ev-modal').classList.remove('open');startPolling();}
 
 function buildTimeOptions(selEl,selectedMin){
   selEl.innerHTML='';
@@ -769,9 +957,11 @@ async function saveEvent(){
   }
   closeEvModal();renderCalendar();renderLegend();
   await dbSave();
+  startPolling();
 }
 
 function openDetModal(evid){
+  stopPolling();
   detailEvId=evid;
   const ev=S.events.find(e=>e.id===evid);if(!ev)return;
   const user=S.users.find(u=>u.id===ev.userId)||{name:'?',color:'#888'};
@@ -832,9 +1022,10 @@ async function castVote(dir){
   await dbSave();
 }
 
-function closeDetModal(){document.getElementById('detail-modal').classList.remove('open');detailEvId=null}
+function closeDetModal(){document.getElementById('detail-modal').classList.remove('open');detailEvId=null;startPolling();}
 
 function editEvModal(evid){
+  stopPolling();
   closeDetModal();
   const ev=S.events.find(e=>e.id===evid);if(!ev)return;
   editEvId=evid;
@@ -857,6 +1048,11 @@ async function delEv(evid){S.events=S.events.filter(e=>e.id!==evid);await dbSave
 function switchTab(tab){
   S.currentTab=tab;
   ['plan','fixed'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
+  // 하단 탭바 동기화
+  ['plan','fixed'].forEach(t=>{
+    const bt=document.getElementById('btab-'+t);
+    if(bt)bt.classList.toggle('active',t===tab);
+  });
   document.getElementById('cal-hint').textContent=tab==='plan'?'드래그해서 일정 추가':'확정된 일정만 표시';
   renderCalendar();
 }
@@ -870,6 +1066,10 @@ function renderUserChip(){
   if(!S.currentUser)return;
   document.getElementById('chip-dot').style.background=S.currentUser.color;
   document.getElementById('chip-name').textContent=S.currentUser.name;
+  const bd=document.getElementById('btab-user-dot');
+  const bn=document.getElementById('btab-user-name');
+  if(bd)bd.style.background=S.currentUser.color;
+  if(bn)bn.textContent=S.currentUser.name;
 }
 
 function changeUser(){
@@ -891,9 +1091,58 @@ function openShare(){
   document.getElementById('share-modal').classList.add('open');
 }
 function closeShare(){document.getElementById('share-modal').classList.remove('open')}
+
+function handleOverlayClick(e, modalId){
+  if(e.target===e.currentTarget){
+    if(modalId==='ev-modal')closeEvModal();
+    else if(modalId==='detail-modal')closeDetModal();
+    else if(modalId==='share-modal')closeShare();
+  }
+}
 function copyUrl(){
   navigator.clipboard.writeText(shareUrl()).then(()=>toast('링크 복사됐어요!')).catch(()=>toast(shareUrl()));
 }
+
+// ── Pull to Refresh ──
+(()=>{
+  let ptrStartY=0,ptrActive=false,ptrThreshold=70;
+  const ind=document.getElementById('ptr-indicator');
+  const spinner=document.getElementById('ptr-spinner');
+  const txt=document.getElementById('ptr-txt');
+
+  document.addEventListener('touchstart',(e)=>{
+    if(window.scrollY===0&&!dragSt&&!moveSt){
+      ptrStartY=e.touches[0].clientY;
+      ptrActive=true;
+    }
+  },{passive:true});
+
+  document.addEventListener('touchmove',(e)=>{
+    if(!ptrActive)return;
+    const dy=e.touches[0].clientY-ptrStartY;
+    if(dy>0&&window.scrollY===0){
+      const h=Math.min(dy*0.5,ptrThreshold);
+      ind.style.height=h+'px';
+      txt.textContent=h>=ptrThreshold?'놓아서 새로고침':'당겨서 새로고침';
+    }
+  },{passive:true});
+
+  document.addEventListener('touchend',async()=>{
+    if(!ptrActive)return;
+    ptrActive=false;
+    const h=parseInt(ind.style.height||'0');
+    if(h>=ptrThreshold){
+      ind.style.height='44px';
+      spinner.style.display='block';
+      txt.textContent='새로고침 중...';
+      await pollSync();
+      renderCalendar();renderLegend();
+    }
+    ind.style.height='0';
+    spinner.style.display='none';
+    txt.textContent='당겨서 새로고침';
+  },{passive:true});
+})();
 
 // ── 초기화 ──
 const _today=localDateStr(new Date());
