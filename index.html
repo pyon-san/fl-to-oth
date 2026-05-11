@@ -529,17 +529,22 @@ async function enterTrip(){
   if(existing){
     S.currentUser=existing;
     toast('반가워요, '+name+'! 👋');
+    // 재입장 시 로컬에 유저 정보 갱신
+    localStorage.setItem('fltooth_user_'+S.tripId,JSON.stringify(S.currentUser));
+    renderMain();showScreen('main');
+    startPolling();
   } else {
     if(S.users.find(u=>u.name===name)){toast('같은 이름이 있어요. 색상을 맞춰주세요');return}
     const user={id:genId(),name,color};
     S.users.push(user);S.currentUser=user;
+    // 로컬 저장 먼저 (dbSave 실패해도 유저 정보 보존)
+    localStorage.setItem('fltooth_user_'+S.tripId,JSON.stringify(S.currentUser));
     showLoading('SAVING...');
     await dbSave();
     hideLoading();
+    renderMain();showScreen('main');
+    startPolling();
   }
-  localStorage.setItem('fltooth_user_'+S.tripId,JSON.stringify(S.currentUser));
-  renderMain();showScreen('main');
-  startPolling();
 }
 
 // ── 메인 ──
